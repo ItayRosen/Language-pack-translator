@@ -1,11 +1,10 @@
 <?php
 set_time_limit(0);
-$key = ''; //google translate api key
+$key    = ''; //google translate api key
 $source = 'en'; //source language code
 $target = 'de'; //target language code
-$input = 'en-gb'; //the folder we wish to translate
+$input  = 'en-gb'; //the folder we wish to translate
 $output = 'de-ch'; //the folder we wish to create for translated files
-
 function getDirContents($dir)
 {
     $handle = opendir($dir);
@@ -28,22 +27,21 @@ function getDirContents($dir)
 }
 function translate($string)
 {
-	global $key, $source, $target;
-		$url = 'https://www.googleapis.com/language/translate/v2?key='.$key.'&source='.$source.'&target='.$target.'&q=' . str_replace(" ","+",$string);
-	    $ch         = curl_init();
-        $curlConfig = array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => 1,
-            CURLOPT_SSL_VERIFYPEER => FALSE,
-            CURLOPT_FOLLOWLOCATION => 1
-        );
-        curl_setopt_array($ch, $curlConfig);
-        $json = curl_exec($ch);
-        curl_close($ch);
+    global $key, $source, $target;
+    $url        = 'https://www.googleapis.com/language/translate/v2?key=' . $key . '&source=' . $source . '&target=' . $target . '&q=' . str_replace(" ", "+", $string);
+    $ch         = curl_init();
+    $curlConfig = array(
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_SSL_VERIFYPEER => FALSE,
+        CURLOPT_FOLLOWLOCATION => 1
+    );
+    curl_setopt_array($ch, $curlConfig);
+    $json = curl_exec($ch);
+    curl_close($ch);
     $decoded = json_decode($json, true);
     return $decoded['data']['translations'][0]['translatedText'];
 }
-
 $files = getDirContents($input);
 foreach ($files as $file) {
     $array = explode(".", $file);
@@ -52,15 +50,13 @@ foreach ($files as $file) {
         foreach ($rows as $row) {
             if (strpos($row, ' = ') !== FALSE && strpos($row, '%') === FALSE && strpos($row, '/') === FALSE) {
                 $array2                          = explode("= '", $row);
-				$string                          = str_replace("';", "", $array2[1]);
+                $string                          = str_replace("';", "", $array2[1]);
                 $translated                      = translate($string);
                 $newRow                          = str_replace($string, $translated, $row);
                 $rows[array_search($row, $rows)] = $newRow;
+            } else {
+                echo 'Please manually edit: ' . $file . '<br>';
             }
-			else
-			{
-				echo 'Please manually edit: '.$file.'<br>';
-			}
         }
         file_put_contents(str_replace($input, $output, $file), implode($rows));
     } else {
